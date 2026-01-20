@@ -1,4 +1,3 @@
-console.log("🔥 INDEX.JS FROM SRC IS RUNNING");
 
 
 import express from "express";
