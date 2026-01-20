@@ -38,3 +38,5 @@ frontend/dist
 *.njsproj
 *.sln
 *.sw?
+
+prisma/dev.db
