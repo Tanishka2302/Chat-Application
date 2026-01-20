@@ -44,7 +44,7 @@ app.use("/api/messages", messageRoutes);
 // 🔹 Serve frontend (PRODUCTION)
 // 🔹 Serve frontend (PRODUCTION)
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "../../backend/dist");
+  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
 
   app.use(express.static(frontendPath));
 
