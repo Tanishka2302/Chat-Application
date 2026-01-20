@@ -43,16 +43,7 @@ app.use("/api/messages", messageRoutes);
 // 🔹 Serve frontend (PRODUCTION ONLY)
 // 🔹 Serve frontend (PRODUCTION)
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "../dist");
-
-  console.log("📦 Frontend path:", frontendPath);
-
-  try {
-    const files = fs.readdirSync(frontendPath);
-    console.log("📂 Frontend files:", files);
-  } catch (err) {
-    console.error("❌ Cannot read frontend folder:", err.message);
-  }
+  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
 
   app.use(express.static(frontendPath));
 
