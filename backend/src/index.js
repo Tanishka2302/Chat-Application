@@ -17,6 +17,9 @@ const PORT = process.env.PORT || 5001;
 // ✅ Correct __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+app.get("/", (req, res) => {
+  res.send("ROOT WORKING");
+});
 
 // 🔹 Middleware
 app.use(express.json({ limit: "10mb" }));
