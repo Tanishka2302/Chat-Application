@@ -36,8 +36,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
 // 🔹 Serve frontend (PRODUCTION ONLY)
+// 🔹 Serve frontend (PRODUCTION)
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.join(__dirname, "../../frontend/dist");
+  const frontendPath = path.join(__dirname, "../dist");
 
   app.use(express.static(frontendPath));
 
@@ -45,6 +46,7 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
+
 
 // 🔹 Start server AFTER DB connects
 const startServer = async () => {
