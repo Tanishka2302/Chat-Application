@@ -1,4 +1,5 @@
 console.log("🔥 INDEX.JS FROM SRC IS RUNNING");
+throw new Error("🚨 THIS IS THE REAL index.js FROM SRC 🚨");
 
 import express from "express";
 import dotenv from "dotenv";
