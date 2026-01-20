@@ -42,11 +42,9 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// 🔹 Serve frontend (PRODUCTION ONLY)
-
 // 🔹 Serve frontend (PRODUCTION)
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
+  const frontendPath = path.resolve(__dirname, "../dist");
 
   console.log("📦 Serving frontend from:", frontendPath);
 
@@ -56,7 +54,6 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
-
 
 
 
