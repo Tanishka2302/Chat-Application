@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
+import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
@@ -12,14 +13,17 @@ import { app, server } from "./lib/socket.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5001;
-const __dirname = path.resolve();
+
+// ✅ Correct __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 🔹 Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// 🔹 CORS (Render + local safe)
+// 🔹 CORS (same-domain safe)
 app.use(
   cors({
     origin: true,
@@ -27,27 +31,25 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 // 🔹 API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// 🔹 Serve frontend (PRODUCTION)
+// 🔹 Serve frontend (PRODUCTION ONLY)
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  const frontendPath = path.join(__dirname, "../../frontend/dist");
 
-  app.get( (req, res) => {
-    res.sendFile(
-      path.join(__dirname, "../frontend/dist/index.html")
-    );
+  app.use(express.static(frontendPath));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
 
 // 🔹 Start server AFTER DB connects
 const startServer = async () => {
   try {
-    await connectDB(); // ✅ PostgreSQL (Neon) connection
+    await connectDB();
     server.listen(PORT, () => {
       console.log("🚀 Server running on PORT:", PORT);
     });
