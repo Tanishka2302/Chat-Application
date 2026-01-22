@@ -11,6 +11,10 @@ export const protectRoute = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (!decoded?.userId) {
+      return res.status(401).json({ message: "Invalid token payload" });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -29,6 +33,6 @@ export const protectRoute = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Auth error:", error);
-    return res.status(401).json({ message: "Invalid token" });
+    return res.status(401).json({ message: "Token invalid" });
   }
 };
