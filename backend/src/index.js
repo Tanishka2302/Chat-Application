@@ -21,9 +21,6 @@ const PORT = process.env.PORT || 5001;
 // ✅ Correct __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.get("/", (req, res) => {
-  res.send("ROOT WORKING");
-});
 
 // 🔹 Middleware
 app.use(express.json({ limit: "10mb" }));
@@ -43,15 +40,19 @@ app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 // 🔹 Serve frontend (PRODUCTION)
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(__dirname, "../../frontend/dist");
+  const frontendPath = path.resolve(__dirname, "../frontend/dist");
 
   console.log("📦 Serving frontend from:", frontendPath);
 
-  app.use(express.static(frontendPath));
+  if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath));
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
-  });
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(frontendPath, "index.html"));
+    });
+  } else {
+    console.error("❌ Frontend build not found!");
+  }
 }
 
 
