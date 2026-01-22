@@ -4,44 +4,31 @@ import prisma from "../lib/db.js";
 export const protectRoute = async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
+    if (!token) return res.status(401).json({ message: "No token" });
 
-    // No token
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized - No Token" });
-    }
-
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Fix token ID reference
-    if (!decoded || !decoded.id) {
-      return res.status(401).json({ message: "Unauthorized - Invalid Token" });
-    }
-
-    // Fetch user from DB
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: {
         id: true,
         name: true,
         email: true,
+        profilePic: true,
       },
     });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(401).json({ message: "User not found" });
 
-    // Attach user to request
     req.user = {
       id: user.id,
-      name: user.name,
+      fullName: user.name,
       email: user.email,
+      profilePic: user.profilePic,
     };
 
     next();
-  } catch (error) {
-    console.error("❌ protectRoute Error:", error);
-    return res.status(401).json({ message: "Unauthorized - Token Failed" });
+  } catch {
+    res.status(401).json({ message: "Unauthorized" });
   }
 };

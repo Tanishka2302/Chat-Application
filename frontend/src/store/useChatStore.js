@@ -7,90 +7,43 @@ export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
   selectedUser: null,
-  isUsersLoading: false,
-  isMessagesLoading: false,
 
-  // ================= LOAD USERS =================
   getUsers: async () => {
-    set({ isUsersLoading: true });
-    try {
-      const res = await axiosInstance.get("/messages/users");
-      set({ users: res.data });
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load users");
-    } finally {
-      set({ isUsersLoading: false });
-    }
+    const res = await axiosInstance.get("/messages/users");
+    set({ users: res.data });
   },
 
-  // ================= LOAD MESSAGES =================
   getMessages: async (userId) => {
-    set({ isMessagesLoading: true });
-    try {
-      const res = await axiosInstance.get(`/messages/${userId}`);
-      set({ messages: res.data });
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load messages");
-    } finally {
-      set({ isMessagesLoading: false });
-    }
+    const res = await axiosInstance.get(`/messages/${userId}`);
+    set({ messages: res.data });
   },
 
-  // ================= SEND MESSAGE =================
-  sendMessage: async (messageData) => {
+  sendMessage: async (data) => {
     const { selectedUser, messages } = get();
-  
-    if (!selectedUser) {
-      toast.error("No user selected");
-      return;
-    }
-  
-    const text = messageData?.text || "";
-  
-    if (!text.trim() && !messageData?.image) {
-      toast.error("Message cannot be empty");
-      return;
-    }
-  
-    try {
-      const res = await axiosInstance.post(
-        `/messages/send/${selectedUser.id}`,
-        {
-          message: text,     // backend expects "message"
-          image: messageData?.image || null,
-        }
-      );
-  
-      set({ messages: [...messages, res.data] });
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to send message");
-    }
+    if (!selectedUser) return toast.error("Select user");
+
+    const res = await axiosInstance.post(
+      `/messages/send/${selectedUser.id}`,
+      data
+    );
+
+    set({ messages: [...messages, res.data] });
   },
-  
-  // ================= REALTIME SOCKET =================
+
   subscribeToMessages: () => {
-    const { selectedUser } = get();
-    if (!selectedUser) return;
-
     const socket = useAuthStore.getState().socket;
-    if (!socket) return;
+    const { selectedUser } = get();
 
-    socket.on("newMessage", (newMessage) => {
-      const isFromSelectedUser =
-        newMessage.senderId === selectedUser.id; // ✅ FIXED (_id → id)
-
-      if (!isFromSelectedUser) return;
-
-      set({
-        messages: [...get().messages, newMessage],
-      });
+    socket?.on("newMessage", (msg) => {
+      if (msg.senderId === selectedUser?.id) {
+        set({ messages: [...get().messages, msg] });
+      }
     });
   },
 
   unsubscribeFromMessages: () => {
-    const socket = useAuthStore.getState().socket;
-    if (socket) socket.off("newMessage");
+    useAuthStore.getState().socket?.off("newMessage");
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedUser: (user) => set({ selectedUser: user })
 }));
