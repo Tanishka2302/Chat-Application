@@ -37,7 +37,7 @@ export const useChatStore = create((set, get) => ({
   },
 
   // ================= SEND MESSAGE =================
-  sendMessage: async (text) => {
+  sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
   
     if (!selectedUser) {
@@ -45,7 +45,9 @@ export const useChatStore = create((set, get) => ({
       return;
     }
   
-    if (!text?.trim()) {
+    const text = messageData?.text || "";
+  
+    if (!text.trim() && !messageData?.image) {
       toast.error("Message cannot be empty");
       return;
     }
@@ -53,7 +55,10 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await axiosInstance.post(
         `/messages/send/${selectedUser.id}`,
-        { message: text } // ✅ match backend expected field
+        {
+          message: text,     // backend expects "message"
+          image: messageData?.image || null,
+        }
       );
   
       set({ messages: [...messages, res.data] });
@@ -62,7 +67,6 @@ export const useChatStore = create((set, get) => ({
     }
   },
   
-
   // ================= REALTIME SOCKET =================
   subscribeToMessages: () => {
     const { selectedUser } = get();
