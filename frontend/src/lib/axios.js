@@ -1,4 +1,4 @@
-import axios from "axios";
+/*import axios from "axios";
 
 export const axiosInstance = axios.create({
   baseURL:
@@ -6,4 +6,11 @@ export const axiosInstance = axios.create({
       ? "http://localhost:5001/api"
       : "/api",
   withCredentials: true,
+});*/
+import axios from "axios";
+
+export const axiosInstance = axios.create({
+  baseURL: "/api",
+  withCredentials: true, // REQUIRED
 });
+

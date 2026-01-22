@@ -4,12 +4,15 @@ import prisma from "../lib/db.js";
 export const protectRoute = async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
-    if (!token) return res.status(401).json({ message: "No token" });
+
+    if (!token) {
+      return res.status(401).json({ message: "No token" });
+    }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+      where: { id: decoded.userId },
       select: {
         id: true,
         name: true,
@@ -18,17 +21,14 @@ export const protectRoute = async (req, res, next) => {
       },
     });
 
-    if (!user) return res.status(401).json({ message: "User not found" });
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
 
-    req.user = {
-      id: user.id,
-      fullName: user.name,
-      email: user.email,
-      profilePic: user.profilePic,
-    };
-
+    req.user = user;
     next();
-  } catch {
-    res.status(401).json({ message: "Unauthorized" });
+  } catch (error) {
+    console.error("Auth error:", error);
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
