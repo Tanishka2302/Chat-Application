@@ -5,46 +5,43 @@ export const protectRoute = async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
 
-    // 🔹 No token
+    // No token
     if (!token) {
-      return res
-        .status(401)
-        .json({ message: "Unauthorized - No Token Provided" });
+      return res.status(401).json({ message: "Unauthorized - No Token" });
     }
 
-    // 🔹 Verify token
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!decoded || !decoded.userId) {
-      return res
-        .status(401)
-        .json({ message: "Unauthorized - Invalid Token" });
+    // Fix token ID reference
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ message: "Unauthorized - Invalid Token" });
     }
 
-    // 🔹 Get user from PostgreSQL (Prisma)
+    // Fetch user from DB
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: decoded.id },
       select: {
         id: true,
-        fullName: true,
+        name: true,
         email: true,
-        profilePic: true,
       },
     });
 
-    // 🔹 User not found
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 🔹 Attach user to request
-    req.user = user;
+    // Attach user to request
+    req.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    };
 
     next();
   } catch (error) {
-    console.error("Error in protectRoute middleware:", error);
-    return res
-      .status(401)
-      .json({ message: "Unauthorized - Token failed" });
+    console.error("❌ protectRoute Error:", error);
+    return res.status(401).json({ message: "Unauthorized - Token Failed" });
   }
 };
