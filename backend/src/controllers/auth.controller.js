@@ -5,20 +5,17 @@ import cloudinary from "../lib/cloudinary.js";
 
 // ====================== SIGNUP ======================
 export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
-
   try {
+    const { fullName, email, password } = req.body;
+
     if (!fullName || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters" });
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
-    // 🔹 Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -27,38 +24,42 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // 🔹 Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔹 Create user
     const newUser = await prisma.user.create({
       data: {
         fullName,
         email,
         password: hashedPassword,
+        profilePic: null,
       },
     });
 
-    // 🔹 Generate JWT
+    // Generate JWT cookie
     generateToken(newUser.id, res);
 
-    res.status(201).json({
+    return res.status(201).json({
       id: newUser.id,
       fullName: newUser.fullName,
       email: newUser.email,
       profilePic: newUser.profilePic,
     });
+
   } catch (error) {
-    console.error("Error in signup controller:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("❌ Signup Error:", error);
+    return res.status(500).json({ message: "Signup failed" });
   }
 };
 
 // ====================== LOGIN ======================
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email & password required" });
+    }
+
     const user = await prisma.user.findUnique({
       where: { email },
     });
@@ -67,34 +68,41 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(password, user.password);
 
-    if (!isPasswordCorrect) {
+    if (!passwordMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
     generateToken(user.id, res);
 
-    res.status(200).json({
+    return res.status(200).json({
       id: user.id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
     });
+
   } catch (error) {
-    console.error("Error in login controller:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("❌ Login Error:", error);
+    return res.status(500).json({ message: "Login failed" });
   }
 };
 
 // ====================== LOGOUT ======================
 export const logout = (req, res) => {
   try {
-    res.cookie("jwt", "", { maxAge: 0 });
-    res.status(200).json({ message: "Logged out successfully" });
+    res.cookie("jwt", "", {
+      maxAge: 0,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+    });
+
+    return res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
-    console.error("Error in logout controller:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("❌ Logout Error:", error);
+    return res.status(500).json({ message: "Logout failed" });
   }
 };
 
@@ -102,36 +110,54 @@ export const logout = (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const { profilePic } = req.body;
-    const userId = req.user.id; // 🔹 Prisma uses `id`, not `_id`
+    const userId = req.user?.id;
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // 🔹 Upload to Cloudinary
+    if (!profilePic) {
+      return res.status(400).json({ message: "Profile picture required" });
+    }
+
     const uploadResponse = await cloudinary.uploader.upload(profilePic);
 
-    // 🔹 Update user
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        profilePic: uploadResponse.secure_url,
-      },
+      data: { profilePic: uploadResponse.secure_url },
     });
 
-    res.status(200).json(updatedUser);
+    return res.status(200).json(updatedUser);
+
   } catch (error) {
-    console.error("Error in update profile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("❌ Update Profile Error:", error);
+    return res.status(500).json({ message: "Update failed" });
   }
 };
 
 // ====================== CHECK AUTH ======================
-export const checkAuth = (req, res) => {
+export const checkAuth = async (req, res) => {
   try {
-    res.status(200).json(req.user);
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        profilePic: true,
+      },
+    });
+
+    return res.status(200).json(user);
+
   } catch (error) {
-    console.error("Error in checkAuth controller:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("❌ CheckAuth Error:", error);
+    return res.status(500).json({ message: "Auth check failed" });
   }
 };
