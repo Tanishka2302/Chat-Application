@@ -15,6 +15,7 @@ import { connectDB } from "./lib/db.js";
 import { app, server } from "./lib/socket.js";
 
 dotenv.config();
+console.log("✅ USING UPDATED SERVER FILE");
 
 const PORT = process.env.PORT || 5001;
 
