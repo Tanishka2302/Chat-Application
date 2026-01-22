@@ -37,25 +37,31 @@ export const useChatStore = create((set, get) => ({
   },
 
   // ================= SEND MESSAGE =================
-  sendMessage: async (messageData) => {
+  sendMessage: async (text) => {
     const { selectedUser, messages } = get();
-
+  
     if (!selectedUser) {
       toast.error("No user selected");
       return;
     }
-
+  
+    if (!text?.trim()) {
+      toast.error("Message cannot be empty");
+      return;
+    }
+  
     try {
       const res = await axiosInstance.post(
-        `/messages/send/${selectedUser.id}`, // ✅ FIXED (_id → id)
-        messageData
+        `/messages/send/${selectedUser.id}`,
+        { message: text } // ✅ match backend expected field
       );
-
+  
       set({ messages: [...messages, res.data] });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to send message");
     }
   },
+  
 
   // ================= REALTIME SOCKET =================
   subscribeToMessages: () => {
