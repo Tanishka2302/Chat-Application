@@ -12,21 +12,21 @@ model User {
   name       String
   email      String   @unique
   password   String
-  profilePic String?  
+  profilePic String?
   createdAt  DateTime @default(now())
 
-  messages   Message[] @relation("SentMessages")
-  received   Message[] @relation("ReceivedMessages")
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Message {
-  id         String   @id @default(uuid())
-  text       String?
-  image      String?
-  senderId   String
-  receiverId String
-  createdAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  text        String?
+  image       String?
+  senderId    String
+  receiverId  String
+  createdAt   DateTime @default(now())
 
-  sender     User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver   User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }
