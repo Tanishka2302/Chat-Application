@@ -8,6 +8,7 @@ const BASE_URL = window.location.origin;
 export const useAuthStore = create((set, get) => ({
   authUser: null,
   socket: null,
+  onlineUsers: [], // ✅ MUST exist to avoid undefined errors
 
   checkAuth: async () => {
     try {
@@ -20,42 +21,59 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signup: async (data) => {
-    const res = await axiosInstance.post("/auth/signup", data);
-    set({ authUser: res.data });
-    toast.success("Account created");
-    get().connectSocket();
+    try {
+      const res = await axiosInstance.post("/auth/signup", data);
+      set({ authUser: res.data });
+      toast.success("Account created");
+      get().connectSocket();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Signup failed");
+    }
   },
 
   login: async (data) => {
-    const res = await axiosInstance.post("/auth/login", data);
-    set({ authUser: res.data });
-    toast.success("Logged in");
-    get().connectSocket();
+    try {
+      const res = await axiosInstance.post("/auth/login", data);
+      set({ authUser: res.data });
+      toast.success("Logged in");
+      get().connectSocket();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Login failed");
+    }
   },
 
   logout: async () => {
-    await axiosInstance.post("/auth/logout");
-    set({ authUser: null });
-    get().disconnectSocket();
+    try {
+      await axiosInstance.post("/auth/logout");
+      set({ authUser: null, onlineUsers: [] });
+      get().disconnectSocket();
+      toast.success("Logged out");
+    } catch {
+      toast.error("Logout failed");
+    }
   },
 
   connectSocket: () => {
-    const { authUser } = get();
-    if (!authUser) return;
+    const { authUser, socket } = get();
+    if (!authUser || socket?.connected) return;
 
-    const socket = io(BASE_URL, {
-      query: { userId: authUser.id }
+    const newSocket = io(BASE_URL, {
+      query: { userId: authUser.id },
+      withCredentials: true,
     });
 
-    socket.connect();
-    set({ socket });
+    newSocket.connect();
+    set({ socket: newSocket });
 
-    socket.on("getOnlineUsers", (users) => {
-      set({ onlineUsers: users });
+    newSocket.on("getOnlineUsers", (users) => {
+      // ✅ Always safe array
+      set({ onlineUsers: Array.isArray(users) ? users : [] });
     });
   },
 
   disconnectSocket: () => {
-    get().socket?.disconnect();
-  }
+    const socket = get().socket;
+    if (socket?.connected) socket.disconnect();
+    set({ socket: null });
+  },
 }));
