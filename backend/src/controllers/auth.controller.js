@@ -7,6 +7,8 @@ import cloudinary from "../lib/cloudinary.js";
 export const signup = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
+    const name = fullName; // map frontend → prisma
+
 
     if (!fullName || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
