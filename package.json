@@ -1,9 +1,9 @@
 {
   "name": "chat-app",
   "version": "1.0.0",
-  "scripts": {
-    "build": "npm install --prefix backend && cd backend && npx prisma generate && cd ../frontend && npm install && npm run build",
-    "start": "node backend/src/index.js"
-  },
+"scripts": {
+  "build": "bash render-build.sh",
+  "start": "node backend/src/index.js"
+},
   "license": "ISC"
 }
