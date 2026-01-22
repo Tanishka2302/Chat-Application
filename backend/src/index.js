@@ -7,8 +7,6 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-
-
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { connectDB } from "./lib/db.js";
@@ -40,17 +38,23 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 // 🔹 Serve frontend (PRODUCTION)
+
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.resolve(process.cwd(), "frontend/dist");
+  const frontendPath = path.join(process.cwd(), "frontend", "dist");
 
-  console.log("📦 Serving frontend from:", frontendPath);
+  console.log("📦 Frontend Path:", frontendPath);
 
-  app.use(express.static(frontendPath));
+  if (fs.existsSync(frontendPath)) {
+    app.use(express.static(frontendPath));
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
-  });
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(frontendPath, "index.html"));
+    });
+  } else {
+    console.log("❌ Frontend build not found!");
+  }
 }
+
 
 
 // 🔹 Start server AFTER DB connects
