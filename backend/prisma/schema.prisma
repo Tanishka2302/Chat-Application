@@ -8,15 +8,15 @@ datasource db {
 }
 model User {
   id         String   @id @default(uuid())
-  name       String   // ✅ revert to DB existing column
+  name       String
   email      String   @unique
   password   String
-  profilePic String?
   createdAt  DateTime @default(now())
 
   messages   Message[]
   chats      Chat[]
 }
+
 
 
 

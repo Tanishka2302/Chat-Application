@@ -1,16 +1,14 @@
 import bcrypt from "bcryptjs";
 import prisma from "../lib/db.js";
 import { generateToken } from "../lib/utils.js";
-import cloudinary from "../lib/cloudinary.js";
 
 // ====================== SIGNUP ======================
 export const signup = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
-    const name = fullName; // map frontend → prisma
+    const name = fullName; // Map frontend → Prisma DB field
 
-
-    if (!fullName || !email || !password) {
+    if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -18,6 +16,7 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
+    // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -26,30 +25,31 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user
     const newUser = await prisma.user.create({
       data: {
-        fullName,
+        name,
         email,
         password: hashedPassword,
-        profilePic: null,
       },
     });
 
-    // Generate JWT cookie
+    // Generate JWT
     generateToken(newUser.id, res);
 
     return res.status(201).json({
       id: newUser.id,
-      fullName: newUser.fullName,
+      fullName: newUser.name,
       email: newUser.email,
-      profilePic: newUser.profilePic,
+      profilePic: null, // DB doesn't have this yet
     });
 
   } catch (error) {
     console.error("❌ Signup Error:", error);
-    return res.status(500).json({ message: "Signup failed" });
+    return res.status(500).json({ message: "Signup failed", error: error.message });
   }
 };
 
@@ -80,9 +80,9 @@ export const login = async (req, res) => {
 
     return res.status(200).json({
       id: user.id,
-      fullName: user.fullName,
+      fullName: user.name,
       email: user.email,
-      profilePic: user.profilePic,
+      profilePic: null,
     });
 
   } catch (error) {
@@ -108,33 +108,11 @@ export const logout = (req, res) => {
   }
 };
 
-// ====================== UPDATE PROFILE ======================
+// ====================== UPDATE PROFILE (DISABLED SAFE) ======================
 export const updateProfile = async (req, res) => {
-  try {
-    const { profilePic } = req.body;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile picture required" });
-    }
-
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { profilePic: uploadResponse.secure_url },
-    });
-
-    return res.status(200).json(updatedUser);
-
-  } catch (error) {
-    console.error("❌ Update Profile Error:", error);
-    return res.status(500).json({ message: "Update failed" });
-  }
+  return res.status(200).json({
+    message: "Profile updates disabled (DB has no profilePic yet)",
+  });
 };
 
 // ====================== CHECK AUTH ======================
@@ -150,20 +128,20 @@ export const checkAuth = async (req, res) => {
       where: { id: userId },
       select: {
         id: true,
-        fullName: true,
+        name: true,
         email: true,
-        profilePic: true,
       },
     });
 
-    return res.status(200).json(user);
+    return res.status(200).json({
+      id: user.id,
+      fullName: user.name,
+      email: user.email,
+      profilePic: null,
+    });
 
   } catch (error) {
-    console.error("❌ SIGNUP FAILED FULL ERROR:", error);
-    return res.status(500).json({ 
-      message: "Signup failed", 
-      error: error.message 
-    });
+    console.error("❌ CheckAuth Error:", error);
+    return res.status(500).json({ message: "Auth check failed" });
   }
-  
 };
