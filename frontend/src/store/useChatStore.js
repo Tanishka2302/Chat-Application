@@ -10,6 +10,7 @@ export const useChatStore = create((set, get) => ({
   isUsersLoading: false,
   isMessagesLoading: false,
 
+  // ================= LOAD USERS =================
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
@@ -21,6 +22,8 @@ export const useChatStore = create((set, get) => ({
       set({ isUsersLoading: false });
     }
   },
+
+  // ================= LOAD MESSAGES =================
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
@@ -32,8 +35,8 @@ export const useChatStore = create((set, get) => ({
       set({ isMessagesLoading: false });
     }
   },
-  
 
+  // ================= SEND MESSAGE =================
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
 
@@ -44,7 +47,7 @@ export const useChatStore = create((set, get) => ({
 
     try {
       const res = await axiosInstance.post(
-        `/messages/send/${selectedUser._id}`,
+        `/messages/send/${selectedUser.id}`, // ✅ FIXED (_id → id)
         messageData
       );
 
@@ -54,6 +57,7 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  // ================= REALTIME SOCKET =================
   subscribeToMessages: () => {
     const { selectedUser } = get();
     if (!selectedUser) return;
@@ -63,7 +67,7 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("newMessage", (newMessage) => {
       const isFromSelectedUser =
-        newMessage.senderId === selectedUser._id;
+        newMessage.senderId === selectedUser.id; // ✅ FIXED (_id → id)
 
       if (!isFromSelectedUser) return;
 

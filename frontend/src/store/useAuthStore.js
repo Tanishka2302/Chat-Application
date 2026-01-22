@@ -17,6 +17,7 @@ export const useAuthStore = create((set, get) => ({
   onlineUsers: [],
   socket: null,
 
+  // ================= CHECK AUTH =================
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
@@ -30,6 +31,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ================= SIGNUP =================
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
@@ -44,6 +46,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ================= LOGIN =================
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
@@ -58,6 +61,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ================= LOGOUT =================
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
@@ -69,6 +73,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ================= UPDATE PROFILE =================
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
@@ -82,13 +87,14 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // ================= SOCKET CONNECT =================
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
     const socket = io(BASE_URL, {
       query: {
-        userId: authUser._id,
+        userId: authUser.id, // ✅ FIXED (_id → id)
       },
     });
 
@@ -100,6 +106,7 @@ export const useAuthStore = create((set, get) => ({
     });
   },
 
+  // ================= SOCKET DISCONNECT =================
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();
   },
